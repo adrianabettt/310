@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sequências Lógicas — Prof. Adriana</title>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@400;600;800&family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --laranja: #FF8C00;
+    --verde: #4CAF50;
+    --fundo: #FFF8EE;
+    --texto: #2D2D2D;
+    --sombra: rgba(255,140,0,0.15);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Nunito', sans-serif;
+    background: var(--fundo);
+    min-height: 100vh;
+    padding: 15px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+  }
+  header { text-align: center; margin-bottom: 15px; }
+  .tag { background: var(--laranja); color: white; padding: 3px 12px; border-radius: 20px; font-size: 0.7rem; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
+  h1 { font-family: 'Baloo 2', cursive; color: var(--laranja); font-size: 1.6rem; margin-top: 8px; }
+
+  .area-wrapper { max-width: 850px; width: 100%; display: flex; flex-direction: column; gap: 15px; }
+
+  /* BANCO DE PEÇAS */
+  .label-secao { font-family: 'Baloo 2', cursive; font-size: 0.8rem; color: #999; text-transform: uppercase; margin-bottom: 5px; }
+  .cards-grid { 
+    display: flex; justify-content: center; flex-wrap: wrap; gap: 10px; 
+    min-height: 115px; background: white; border: 2px dashed #d1c4e9;
+    border-radius: 15px; padding: 15px; box-shadow: inset 0 2px 10px rgba(0,0,0,0.02);
+  }
+
+  .card {
+    background: #fff; border-radius: 12px; padding: 10px; text-align: center;
+    cursor: grab; box-shadow: 0 4px 8px rgba(0,0,0,0.08);
+    border: 2px solid #f0f0f0; width: 140px; user-select: none;
+    transition: transform 0.2s, border-color 0.2s;
+  }
+  .card:hover { transform: translateY(-3px); border-color: var(--laranja); }
+  .card.dragging { opacity: 0.3; transform: scale(0.9); }
+  .card .emoji { font-size: 2rem; display: block; margin-bottom: 4px; }
+  .card .nome { font-weight: 800; font-size: 0.75rem; color: var(--texto); line-height: 1.2; }
+
+  /* SLOTS DE SEQUÊNCIA */
+  .slots-container { display: flex; gap: 12px; justify-content: center; }
+  .slot-col { flex: 1; max-width: 150px; display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .slot-num { 
+    font-family: 'Baloo 2', cursive; font-weight: 800; color: white; 
+    background: var(--laranja); width: 25px; height: 25px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center; font-size: 0.8rem;
+  }
+  .slot {
+    width: 100%; min-height: 115px; border: 3px dashed #e0caaa;
+    border-radius: 15px; background: #fffcf7;
+    display: flex; align-items: center; justify-content: center; transition: 0.3s;
+  }
+  .slot.drag-over { background: #ffe0b2; border-style: solid; }
+
+  /* BOTÕES */
+  .controles { display: flex; gap: 15px; justify-content: center; margin-top: 25px; }
+  .btn {
+    font-family: 'Baloo 2', cursive; font-weight: 800; padding: 12px 35px;
+    border-radius: 50px; border: none; cursor: pointer; font-size: 1.1rem; transition: 0.3s;
+  }
+  .btn-check { background: var(--laranja); color: white; box-shadow: 0 6px 15px var(--sombra); }
+  .btn-check:hover { transform: scale(1.05); filter: brightness(1.1); }
+
+  /* TELA FINAL */
+  #painel-final {
+    display: none; background: white; padding: 40px; border-radius: 25px;
+    text-align: center; box-shadow: 0 15px 40px rgba(0,0,0,0.1); width: 100%; max-width: 550px;
+    margin-top: 50px;
+  }
+  .nota-box { 
+    background: var(--fundo); border: 4px solid var(--laranja); 
+    display: inline-block; padding: 20px 40px; border-radius: 20px; margin: 20px 0;
+  }
+  .nota-grande { font-size: 5rem; color: var(--laranja); font-weight: 800; line-height: 1; }
+  .msg-final { font-size: 1.3rem; font-weight: 700; color: #444; margin-bottom: 10px; }
+</style>
+</head>
+<body>
+
+<div id="game-view" style="width: 100%; display: flex; flex-direction: column; align-items: center;">
+  <header>
+    <div class="tag">Pensamento Computacional</div>
+    <h1 id="fase-titulo">Carregando Algoritmo...</h1>
+    <p style="color: #666; font-weight: 600;">Arraste as ações para a ordem correta de execução.</p>
+  </header>
+
+  <div class="area-wrapper">
+    <div class="label-secao">📥 Banco de Ações</div>
+    <div class="cards-grid" id="banco" ondragover="event.preventDefault()" ondrop="dropNoBanco(event)"></div>
+    
+    <div class="label-secao">📤 Sequência Lógica</div>
+    <div class="slots-container" id="slots-grid"></div>
+
+    <div class="controles">
+      <button class="btn btn-check" id="btnAcao" onclick="processarFase()">Avançar para Atividade 2</button>
+    </div>
+  </div>
+</div>
+
+<div id="painel-final">
+  <h2 style="font-family: 'Baloo 2'; color: var(--verde); font-size: 2rem;">🎉 Atividades Concluídas!</h2>
+  <p class="msg-final" id="feedback-msg"></p>
+  <div class="nota-box">
+    <span style="font-weight: 800; color: #888;">SUA NOTA FINAL</span><br>
+    <span class="nota-grande" id="nota-final">0.0</span>
+  </div>
+  <br>
+  <button class="btn btn-check" onclick="location.reload()">🔄 Tentar Novamente</button>
+</div>
+
+<script>
+  const FASES = [
+    {
+      titulo: "1. Algoritmo: Vitamina de Banana 🍌",
+      passos: [
+        { id: 1, emoji: '🥛', nome: 'Colocar leite e banana' },
+        { id: 2, emoji: '🌪️', nome: 'Bater no liquidificador' },
+        { id: 3, emoji: '🥤', nome: 'Servir no copo' },
+        { id: 4, emoji: '🧼', nome: 'Lavar o que usou' }
+      ]
+    },
+    {
+      titulo: "2. Algoritmo: Arrumar a Mesa 🍽️",
+      passos: [
+        { id: 1, emoji: '🧵', nome: 'Colocar a toalha' },
+        { id: 2, emoji: '🍽️', nome: 'Distribuir os pratos' },
+        { id: 3, emoji: '🍴', nome: 'Organizar os talheres' },
+        { id: 4, emoji: '🥤', nome: 'Colocar os copos' }
+      ]
+    }
+  ];
+
+  let faseAtual = 0;
+  let acertosAcumulados = 0;
+  let slots = Array(4).fill(null);
+  let draggingItem = null;
+  let sourceOrigin = null;
+
+  function init() {
+    const dados = FASES[faseAtual];
+    document.getElementById('fase-titulo').innerText = dados.titulo;
+    document.getElementById('btnAcao').innerText = (faseAtual === 0) ? "Próxima Atividade ➡️" : "Finalizar e Ver Nota ✅";
+    
+    // Banco
+    const bancoEl = document.getElementById('banco');
+    bancoEl.innerHTML = '';
+    [...dados.passos].sort(() => Math.random() - 0.5).forEach(item => {
+      bancoEl.appendChild(criarCard(item, 'banco'));
+    });
+
+    // Slots
+    const slotsEl = document.getElementById('slots-grid');
+    slotsEl.innerHTML = '';
+    slots = Array(4).fill(null);
+    for(let i=0; i<4; i++) {
+      slotsEl.innerHTML += `
+        <div class="slot-col">
+          <div class="slot-num">${i+1}</div>
+          <div class="slot" ondragover="event.preventDefault(); this.classList.add('drag-over')" 
+               ondragleave="this.classList.remove('drag-over')" ondrop="handleDrop(event, ${i})">
+          </div>
+        </div>`;
+    }
+  }
+
+  function criarCard(item, origin) {
+    const card = document.createElement('div');
+    card.className = 'card';
+    card.draggable = true;
+    card.innerHTML = `<span class="emoji">${item.emoji}</span><span class="nome">${item.nome}</span>`;
+    card.ondragstart = () => { draggingItem = item; sourceOrigin = origin; card.classList.add('dragging'); };
+    card.ondragend = () => card.classList.remove('dragging');
+    return card;
+  }
+
+  function handleDrop(e, targetIdx) {
+    const slotEl = e.target.closest('.slot');
+    slotEl.classList.remove('drag-over');
+    if(slots[targetIdx]) return;
+
+    if(sourceOrigin === 'banco') {
+      const cards = document.getElementById('banco').children;
+      for(let c of cards) if(c.innerText.includes(draggingItem.nome)) c.remove();
+    } else {
+      // Se mover entre slots (opcional, mas bom ter)
+      const todosSlots = document.querySelectorAll('.slot');
+      todosSlots.forEach((s, idx) => { if(slots[idx] === draggingItem) { s.innerHTML = ''; slots[idx] = null; } });
+    }
+
+    slots[targetIdx] = draggingItem;
+    slotEl.appendChild(criarCard(draggingItem, 'slot'));
+  }
+
+  function dropNoBanco(e) {
+    if(sourceOrigin === 'slot') {
+      const todosSlots = document.querySelectorAll('.slot');
+      todosSlots.forEach((s, idx) => { if(slots[idx] === draggingItem) { s.innerHTML = ''; slots[idx] = null; } });
+      document.getElementById('banco').appendChild(criarCard(draggingItem, 'banco'));
+    }
+  }
+
+  function processarFase() {
+    if(slots.includes(null)) {
+      alert("Ops! Organize todos os passos antes de continuar.");
+      return;
+    }
+
+    // Calcular acertos desta fase
+    slots.forEach((item, idx) => {
+      if(item.id === (idx + 1)) acertosAcumulados++;
+    });
+
+    if(faseAtual === 0) {
+      faseAtual++;
+      init();
+    } else {
+      exibirResultadoFinal();
+    }
+  }
+
+  function exibirResultadoFinal() {
+    document.getElementById('game-view').style.display = 'none';
+    const painel = document.getElementById('painel-final');
+    const notaEl = document.getElementById('nota-final');
+    const msgEl = document.getElementById('feedback-msg');
+
+    const notaFinal = (acertosAcumulados * 1.25).toFixed(1);
+    painel.style.display = 'block';
+    notaEl.innerText = notaFinal;
+
+    if(notaFinal >= 9) {
+      msgEl.innerText = "Incrível! Você seguiu todos os passos perfeitamente!";
+    } else if(notaFinal >= 6) {
+      msgEl.innerText = "Muito bem! Você tem uma boa noção de sequência.";
+    } else {
+      msgEl.innerText = "A ordem é importante! Que tal tentar de novo?";
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>
